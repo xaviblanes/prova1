@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuaris Redis</title>
+</head>
+<body>
+  <h1>Gestió d'Usuaris</h1>
+
+  <input id="user" placeholder="Usuari">
+  <input id="pass" placeholder="Contrasenya">
+  <select id="rol">
+    <option value="admin">Admin</option>
+    <option value="usuari">Usuari</option>
+  </select>
+  <button onclick="afegir()">Afegir</button>
+
+  <h2>Llista</h2>
+  <div id="llista"></div>
+
+  <script>
+    const API = "http://localhost:3000";
+
+    async function afegir() {
+      const user = document.getElementById("user").value;
+      const pass = document.getElementById("pass").value;
+      const rol = document.getElementById("rol").value;
+
+      await fetch(\`\${API}/usuaris\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, pass, rol }),
+      });
+
+      document.getElementById("user").value = "";
+      document.getElementById("pass").value = "";
+      carregar();
+    }
+
+    async function eliminar(user) {
+      await fetch(\`\${API}/usuaris/\${user}\`, { method: "DELETE" });
+      carregar();
+    }
+
+    async function carregar() {
+      const res = await fetch(\`\${API}/usuaris\`);
+      const usuaris = await res.json();
+      const cont = document.getElementById("llista");
+      cont.innerHTML = "";
+
+      usuaris.forEach(u => {
+        cont.innerHTML += \`<div>\${u.user} (\${u.rol}) 
+          <button onclick="eliminar('\${u.user}')">Eliminar</button></div>\`;
+      });
+    }
+
+    carregar();
+  </script>
+</body>
+</html>
