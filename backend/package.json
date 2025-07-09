@@ -1,9 +1,8 @@
 {
-  "name": "usuaris-api",
-  "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "dependencies": {
     "express": "^4.18.2",
+    "cors": "^2.8.5",
     "redis": "^4.6.7"
   }
 }

@@ -1,24 +1,39 @@
-const express = require("express");
-const redis = require("redis");
-const app = express();
-const port = 3000;
+import { createClient } from 'redis';
 
-const client = redis.createClient({
-  socket: {
-    host: 'redis',
-    port: 6379
-  }
+const client = createClient({
+    username: 'default',
+    password: '9g9sOEjVi6XPmyihvq7AjcVc3B8odlOa',
+    socket: {
+        host: 'redis-16979.c74.us-east-1-4.ec2.redns.redis-cloud.com',
+        port: 16979
+    }
 });
 
+client.on('error', err => console.log('Redis Client Error', err));
+
+await client.connect();
+
+await client.set('foo', 'bar');
+const result = await client.get('foo');
+console.log(result)  // >>> bar
+
+
+
+import express from "express";
+import cors from "cors";
+import redis from "redis";
+
+const app = express();
+app.use(cors());
 app.use(express.json());
 
+const client = redis.createClient({
+  url: "redis://default:9g9sOEjVi6XPmyihvq7AjcVc3B8odlOa@redis-16979.c74.us-east-1-4.ec2.redns.redis-cloud.com:16979"
+});
 client.connect().catch(console.error);
 
-app.post("/usuaris", async (req, res) => {
-  const { user, pass, rol } = req.body;
-  if (!user || !pass || !rol) return res.status(400).send("Falten camps");
-  await client.hSet(`usuari:${user}`, { pass, rol });
-  res.send("Usuari afegit");
+app.get("/", (req, res) => {
+  res.send("API d'usuaris operativa. Fes GET a /usuaris per veure dades.");
 });
 
 app.get("/usuaris", async (req, res) => {
@@ -33,12 +48,16 @@ app.get("/usuaris", async (req, res) => {
   res.json(usuaris);
 });
 
-app.delete("/usuaris/:user", async (req, res) => {
-  const key = `usuari:${req.params.user}`;
-  await client.del(key);
-  res.send("Usuari eliminat");
+app.post("/alta", async (req, res) => {
+  const { user, pass, rol } = req.body;
+  await client.hSet(`usuari:${user}`, { pass, rol });
+  res.sendStatus(201);
 });
 
-app.listen(port, () => {
-  console.log(`API escoltant a http://localhost:${port}`);
+app.delete("/baixa/:user", async (req, res) => {
+  const { user } = req.params;
+  await client.del(`usuari:${user}`);
+  res.sendStatus(200);
 });
+
+app.listen(3000, () => console.log("Backend escoltant a http://localhost:3000"));

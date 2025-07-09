@@ -1,59 +1,74 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-  <meta charset="UTF-8">
-  <title>Usuaris Redis</title>
+  <meta charset="UTF-8" />
+  <title>Gestió d'usuaris</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; max-width: 600px; margin: auto; }
+    input, button { margin: 0.2rem; }
+    li { margin: 0.5rem 0; }
+  </style>
 </head>
 <body>
-  <h1>Gestió d'Usuaris</h1>
+  <h1>Gestió d'usuaris</h1>
 
-  <input id="user" placeholder="Usuari">
-  <input id="pass" placeholder="Contrasenya">
-  <select id="rol">
-    <option value="admin">Admin</option>
-    <option value="usuari">Usuari</option>
-  </select>
-  <button onclick="afegir()">Afegir</button>
+  <h2>Donar d'alta usuari</h2>
+  <form id="form-alta">
+    <input name="user" placeholder="Usuari" required />
+    <input name="pass" placeholder="Contrasenya" required />
+    <input name="rol" placeholder="Rol" required />
+    <button>Alta</button>
+  </form>
 
-  <h2>Llista</h2>
-  <div id="llista"></div>
+  <h2>Donar de baixa usuari</h2>
+  <form id="form-baixa">
+    <input name="user" placeholder="Usuari a eliminar" required />
+    <button>Baixa</button>
+  </form>
+
+  <h2>Llistat d'usuaris</h2>
+  <button id="boto-llistar">Llistar usuaris</button>
+  <ul id="llista"></ul>
 
   <script>
-    const API = "http://localhost:3000";
+    const formAlta = document.getElementById("form-alta");
+    const formBaixa = document.getElementById("form-baixa");
+    const botoLlistar = document.getElementById("boto-llistar");
+    const llista = document.getElementById("llista");
 
-    async function afegir() {
-      const user = document.getElementById("user").value;
-      const pass = document.getElementById("pass").value;
-      const rol = document.getElementById("rol").value;
+    const carregar = async () => {
+      const usuaris = await (await fetch("http://localhost:3000/usuaris")).json();
+      llista.innerHTML = "";
+      usuaris.forEach(u => {
+        const li = document.createElement("li");
+        li.textContent = `${u.user} (rol: ${u.rol})`;
+        llista.appendChild(li);
+      });
+    };
 
-      await fetch(\`\${API}/usuaris\`, {
+    formAlta.onsubmit = async e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(formAlta));
+      await fetch("http://localhost:3000/alta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user, pass, rol }),
+        body: JSON.stringify(data),
       });
-
-      document.getElementById("user").value = "";
-      document.getElementById("pass").value = "";
+      formAlta.reset();
       carregar();
-    }
+    };
 
-    async function eliminar(user) {
-      await fetch(\`\${API}/usuaris/\${user}\`, { method: "DELETE" });
+    formBaixa.onsubmit = async e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(formBaixa));
+      await fetch("http://localhost:3000/baixa/" + data.user, { method: "DELETE" });
+      formBaixa.reset();
       carregar();
-    }
+    };
 
-    async function carregar() {
-      const res = await fetch(\`\${API}/usuaris\`);
-      const usuaris = await res.json();
-      const cont = document.getElementById("llista");
-      cont.innerHTML = "";
+    botoLlistar.onclick = carregar;
 
-      usuaris.forEach(u => {
-        cont.innerHTML += \`<div>\${u.user} (\${u.rol}) 
-          <button onclick="eliminar('\${u.user}')">Eliminar</button></div>\`;
-      });
-    }
-
+    // Carrega inicial
     carregar();
   </script>
 </body>
